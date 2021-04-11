@@ -1,8 +1,5 @@
 import sys
 import subprocess
-def install(package):
-    subprocess.check_call([sys.executable, "-m", "pip", "install","-U",package])
-install("scikit-learn")
 import sklearn
 from sqlalchemy import create_engine
 import pandas as pd
@@ -27,7 +24,6 @@ from sklearn.metrics import classification_report
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.model_selection import GridSearchCV
 import pickle
-print(sklearn.__version__)
 nltk.download(['punkt', 'wordnet'])
 nltk.download('averaged_perceptron_tagger')
 
@@ -126,17 +122,19 @@ def build_model():
         ('clf', DummyEstimator())
     ])
 
-    n_estimators = [20]
-    max_depth = [10]
-    max_iter = [200]
+    n_estimators = [100,200,300]
+    max_depth =[10,20]
+    max_iter = [200,300]
+    class_weight = [None, 'balanced']
 
     # Candidate learning algorithms and their hyperparameters
 
     search_space = [{'clf': [MultiOutputClassifier(RandomForestClassifier())],
                     'clf__estimator__n_estimators': n_estimators,
-                     'clf__estimator__max_depth': max_depth},
-                     {'clf': [MultiOutputClassifier(LogisticRegression())],
-                     'clf__estimator__max_iter': max_iter}]
+                    'clf__estimator__max_depth': max_depth},
+                    {'clf': [MultiOutputClassifier(LogisticRegression())],
+                     'clf__estimator__max_iter': max_iter,
+                     'clf__estimator__class_weight': class_weight}]
 
     #Create grid search
     cv = GridSearchCV(pipeline, search_space, n_jobs=-1)

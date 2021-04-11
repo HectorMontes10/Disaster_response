@@ -6,67 +6,79 @@ from nltk.tokenize import word_tokenize
 from flask import Flask
 from flask import render_template, request, jsonify
 from plotly.graph_objs import Bar
-try:
-    from sklearn.externals import joblib
-except:
-    pass
 from sqlalchemy import create_engine
 import joblib
 import sys
-sys.path.append("/home/workspace/models")
+sys.path.append("../models")
 from starting_verb_extractor import StartingVerbExtractor
 from calculate_textlength import CalculateLengthText
 from dummy_estimator  import DummyEstimator
-#from tokenize import tokenize
+import tokenize_
+import plotly_wc
+from plotly_wc import plotly_wordcloud
+from tokenize_ import tokenize
 import subprocess
-#def install(package):
-#    subprocess.check_call([sys.executable, "-m", "pip", "install","-U",package])
-#install("scikit-learn")
 import sklearn
 import nltk
+import plotly.graph_objs as go
+
 nltk.download('averaged_perceptron_tagger')
 nltk.download(['punkt', 'wordnet'])
 import re
 
-app = Flask(__name__)
-
-def tokenize(text):
-    # get list of all urls using regex
-    url_regex = 'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
-    detected_urls = re.compile(url_regex).findall(text)
-    # replace each url in text string with placeholder
-    for url in detected_urls:
-        text = text.replace(url,"urlplaceholder")
-    # tokenize text
-    tokens = word_tokenize(text)
-    # initiate lemmatizer
-    lemmatizer = WordNetLemmatizer()
-    # iterate through each token
-    clean_tokens = []
-    for tok in tokens:
-        # lemmatize, normalize case, and remove leading/trailing white space
-        clean_tok = lemmatizer.lemmatize(tok).lower().strip()
-        clean_tokens.append(clean_tok)
-    return clean_tokens
-
 # load data
 engine = create_engine('sqlite:///../data/DisasterResponse.db')
 df = pd.read_sql_table('Cleaned_messages', engine)
+init_string = " ".join(tokenize(df['message'].iloc[0]))
+for i in range(1,df.shape[0]):
+    str_ = " ".join(tokenize(df['message'].iloc[i]))
+    init_string = " ".join([init_string,str_])
+
+fig = plotly_wordcloud(init_string)
+annotation = "Use the buttons in the upper right corner to interact with this WordCloud"
+title = 'WordCloud for most tagged words'
+fig.update_layout(
+    title=go.layout.Title(
+        text=title,
+        x=0.5
+    ),
+    xaxis=go.layout.XAxis(
+        title=go.layout.xaxis.Title(
+            text=annotation,
+            font=dict(
+                family="Courier New, monospace",
+                size=18,
+                color="#7f7f7f"
+            )
+        )
+    )
+)
+fig.update_xaxes(showgrid=False,showticklabels=False, zeroline=False)
 
 # load model
-model = joblib.load("../models/model_full.pkl")
+model = joblib.load("../models/classifier.pkl")
 model = model.best_estimator_
+
+app = Flask(__name__)
 
 # index webpage displays cool visuals and receives user input text for model
 @app.route('/')
 @app.route('/index')
+
 def index():
     
     # extract data needed for visuals
     # TODO: Below is an example - modify to extract data for your own visuals
     genre_counts = df.groupby('genre').count()['message']
-    genre_names = list(genre_counts.index)
     
+    genre_names = list(genre_counts.index)
+    cases_by_categories = df.iloc[:,4:].apply(sum)
+    cases_by_categories = cases_by_categories.sort_values(axis=0, ascending=False)
+    less_frequent_cases = cases_by_categories[-5:]
+    less_frequent_names =  [x.capitalize().replace('_', ' ') for x in list(less_frequent_cases.index)]
+    most_frequent_cases = cases_by_categories[0:5]
+    most_frequent_names =  [x.capitalize().replace('_', ' ') for x in list(most_frequent_cases.index)]
+        
     # create visuals
     # TODO: Below is an example - modify to create your own visuals
     graphs = [
@@ -87,7 +99,44 @@ def index():
                     'title': "Genre"
                 }
             }
-        }
+        },
+        {
+            'data': [
+                Bar(
+                    x=most_frequent_names,
+                    y=most_frequent_cases
+                )
+            ],
+
+            'layout': {
+                'title': 'Most frequent cases by categories',
+                'yaxis': {
+                    'title': "Count"
+                },
+                'xaxis': {
+                    'title': "Categories"
+                }
+            }
+        },
+        {
+            'data': [
+                Bar(
+                    x=less_frequent_names,
+                    y=less_frequent_cases
+                )
+            ],
+
+            'layout': {
+                'title': 'Less frequent cases by categories',
+                'yaxis': {
+                    'title': "Count"
+                },
+                'xaxis': {
+                    'title': "Categories"
+                }
+            }
+        },
+        fig
     ]
     
     # encode plotly graphs in JSON
