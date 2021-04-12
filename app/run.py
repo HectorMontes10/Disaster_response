@@ -1,13 +1,15 @@
 import json
 import plotly
 import pandas as pd
-from nltk.stem import WordNetLemmatizer
-from nltk.tokenize import word_tokenize
 from flask import Flask
 from flask import render_template, request, jsonify
 from plotly.graph_objs import Bar
 from sqlalchemy import create_engine
 import joblib
+import plotly.graph_objs as go
+
+#Import custom class and functions:
+
 import sys
 sys.path.append("../models")
 from starting_verb_extractor import StartingVerbExtractor
@@ -17,24 +19,23 @@ import tokenize_
 import plotly_wc
 from plotly_wc import plotly_wordcloud
 from tokenize_ import tokenize
-import subprocess
-import sklearn
-import nltk
-import plotly.graph_objs as go
-
-nltk.download('averaged_perceptron_tagger')
-nltk.download(['punkt', 'wordnet'])
-import re
 
 # load data
+
 engine = create_engine('sqlite:///../data/DisasterResponse.db')
 df = pd.read_sql_table('Cleaned_messages', engine)
+
+# Create a wordcloud using plotly based on training messages (This may take a few minutes)
+
 init_string = " ".join(tokenize(df['message'].iloc[0]))
 for i in range(1,df.shape[0]):
     str_ = " ".join(tokenize(df['message'].iloc[i]))
     init_string = " ".join([init_string,str_])
 
 fig = plotly_wordcloud(init_string)
+
+#Custom title and annotations for wordcloud figure:
+
 annotation = "Use the buttons in the upper right corner to interact with this WordCloud"
 title = 'WordCloud for most tagged words'
 fig.update_layout(
@@ -56,31 +57,45 @@ fig.update_layout(
 fig.update_xaxes(showgrid=False,showticklabels=False, zeroline=False)
 
 # load model
+
 model = joblib.load("../models/classifier.pkl")
 model = model.best_estimator_
+
+#Star flask app 
 
 app = Flask(__name__)
 
 # index webpage displays cool visuals and receives user input text for model
+
 @app.route('/')
 @app.route('/index')
 
 def index():
     
-    # extract data needed for visuals
-    # TODO: Below is an example - modify to extract data for your own visuals
-    genre_counts = df.groupby('genre').count()['message']
+    # Extract data needed for visuals:
     
+    #For first figure:
+    
+    genre_counts = df.groupby('genre').count()['message']
     genre_names = list(genre_counts.index)
+    
+    #For second figure:
+    
     cases_by_categories = df.iloc[:,4:].apply(sum)
     cases_by_categories = cases_by_categories.sort_values(axis=0, ascending=False)
     less_frequent_cases = cases_by_categories[-5:]
     less_frequent_names =  [x.capitalize().replace('_', ' ') for x in list(less_frequent_cases.index)]
+    
+    #For third figure:
+    
     most_frequent_cases = cases_by_categories[0:5]
     most_frequent_names =  [x.capitalize().replace('_', ' ') for x in list(most_frequent_cases.index)]
         
-    # create visuals
-    # TODO: Below is an example - modify to create your own visuals
+    # create visualization:
+    #--counts of messages by Genres
+    #--Most and less frequent cases by categories
+    #--wordcloud based on tokens extracted
+    
     graphs = [
         {
             'data': [
@@ -140,19 +155,21 @@ def index():
     ]
     
     # encode plotly graphs in JSON
+    
     ids = ["graph-{}".format(i) for i, _ in enumerate(graphs)]
     graphJSON = json.dumps(graphs, cls=plotly.utils.PlotlyJSONEncoder)
     
     # render web page with plotly graphs
+    
     return render_template('master.html', ids=ids, graphJSON=graphJSON)
 
 # web page that handles user query and displays model results
+
 @app.route('/go')
 def go():
     # save user input in query
     query = request.args.get('query', '') 
     # use model to predict classification for query
-    print(query)
     classification_labels = model.predict([query])[0]
     classification_results = dict(zip(df.columns[4:], classification_labels))
 

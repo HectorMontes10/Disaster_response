@@ -4,7 +4,6 @@ import numpy as np
 import json
 from sqlalchemy import create_engine
 
-
 def load_data(messages_filepath, categories_filepath):
     
     '''
@@ -92,6 +91,12 @@ def save_data(df, database_filename):
     df.to_sql('Cleaned_messages', engine, index=False)
 
 def main():
+    
+    '''
+    
+    This function control the ETL flow and call the other functions for load, clean, and save data
+    
+    '''
     if len(sys.argv) == 4:
 
         messages_filepath, categories_filepath, database_filepath = sys.argv[1:]

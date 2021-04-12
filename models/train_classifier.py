@@ -1,33 +1,46 @@
-import sys
-import subprocess
-import sklearn
+#Import packages
+
+from time import time
+import re
 from sqlalchemy import create_engine
 import pandas as pd
 import numpy as np
-import nltk
-import re
-from nltk.tokenize import word_tokenize
-from nltk.tokenize import sent_tokenize
-from nltk import pos_tag
-from nltk.stem.wordnet import WordNetLemmatizer
-from sklearn.datasets import make_multilabel_classification
+import sklearn
 from sklearn.multioutput import MultiOutputClassifier
-from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.model_selection import train_test_split
-from time import time 
 from sklearn.pipeline import Pipeline, FeatureUnion
 from sklearn.metrics import classification_report
-from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.model_selection import GridSearchCV
 import pickle
-nltk.download(['punkt', 'wordnet'])
-nltk.download('averaged_perceptron_tagger')
+
+#Import custom class and functions
+
+import sys
+sys.path.append("./models")
+from starting_verb_extractor import StartingVerbExtractor
+from calculate_textlength import CalculateLengthText
+from dummy_estimator  import DummyEstimator
+import tokenize_
+from tokenize_ import tokenize
 
 def load_data(database_filepath):
+    
+    '''
+    
+    This function load a database of cleaned messages.
+    
+    Params:
+        database_filepath (string): Path to sqlLite database
+    Returns:
+        X(numpy array): array with raw text to train model
+        Y(numpy array): matrix with target variables (one per categorie)
+        categorie_names(list): Names of target variables usefull for graphics
+        
+    '''
     engine = create_engine('sqlite:///'+database_filepath)
     df = pd.read_sql_table("Cleaned_messages",con=engine)
 
@@ -37,78 +50,19 @@ def load_data(database_filepath):
     
     return X, Y, category_names
 
-def tokenize(text):
-    # get list of all urls using regex
-    url_regex = 'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
-    detected_urls = re.compile(url_regex).findall(text)
-    # replace each url in text string with placeholder
-    for url in detected_urls:
-        text = text.replace(url,"urlplaceholder")
-    # tokenize text
-    tokens = word_tokenize(text)
-    # initiate lemmatizer
-    lemmatizer = WordNetLemmatizer()
-    # iterate through each token
-    clean_tokens = []
-    for tok in tokens:
-        # lemmatize, normalize case, and remove leading/trailing white space
-        clean_tok = lemmatizer.lemmatize(tok).lower().strip()
-        clean_tokens.append(clean_tok)
-    return clean_tokens
-
-class DummyEstimator(BaseEstimator):
-    def fit(self): pass
-    def score(self): pass
-
-class StartingVerbExtractor(BaseEstimator, TransformerMixin):
-
-    def starting_verb(self, text):
-        # tokenize by sentences
-        sentence_list = sent_tokenize(text)
-        for sentence in sentence_list:
-            # tokenize each sentence into words and tag part of speech
-            pos_tags = pos_tag(word_tokenize(sentence))
-
-            # index pos_tags to get the first word and part of speech tag
-            first_word, first_tag = pos_tags[0]
-            
-            # return true if the first word is an appropriate verb or RT for retweet
-            if first_tag in ['VB', 'VBP'] or first_word == 'RT':
-                return 1
-        return 0
-
-    def fit(self, x, y=None):
-        return self
-
-    def transform(self, X):
-        # apply starting_verb function to all values in X
-        X_tagged = [self.starting_verb(text) for text in X]
-        return pd.DataFrame(X_tagged)
-
-class CalculateLengthText(BaseEstimator, TransformerMixin):
-    
-    def __init__(self):
-        
-        self.min_length =  0
-        self.max_lenth = 0
-        
-    def length_text(self, text):
-        return len(text)
-
-    def fit(self, X, y=None):
-        Length_X = [self.length_text(text) for text in X]
-        self.min_length = min(Length_X)
-        self.max_length = max(Length_X)
-        return self
-
-    def transform(self, X):
-        # apply starting_verb function to all values in X
-        Length_X = [self.length_text(text) for text in X]
-        Length_X_scaled = [(length-self.min_length)/(self.max_length-self.min_length) for length in Length_X]
-        return pd.DataFrame(Length_X_scaled)
-
 def build_model():
     
+    '''
+    This function construct a pipeline with custom transformer and estimators. The pipeline is passed to a grid search function
+    for tuning parameter for estimators. The pipeline include FeatureUnion based in custom transformer.
+    
+    Params:
+        None
+    Returns:
+        cv(GridSearch object): An object of class GridSearch fitting over train data. The object have an attribute "best_estimator_"
+                               that contain the best model finded.
+    
+    '''
     pipeline = Pipeline([
         ('features', FeatureUnion([
 
@@ -137,10 +91,27 @@ def build_model():
                      'clf__estimator__class_weight': class_weight}]
 
     #Create grid search
+    
     cv = GridSearchCV(pipeline, search_space, n_jobs=-1)
+    
     return cv
 
 def evaluate_model(model, X_test, Y_test, category_names):
+    
+    '''
+    This function evaluate the best model in gridsearch object fitted over train data using "classification_report" function over
+    X_test dataset.
+    
+    Params:
+        model(gridSearch object): gridSearch object fitted over train data.
+        X_test(numpy array): array of string to be used for test model
+        Y_test(numpy array): Matrix with test dataset for evaluate model
+        categorie_names(list): Names of target variables
+    Return:
+        result (string): Printed string with metrics for model evaluated (Recall, Precission and F1 Score) for each
+                         target variable in model.
+    
+    '''
     best_pipeline = model.best_estimator_
     Y_pred = best_pipeline.predict(X_test)
     target_names = category_names
@@ -148,9 +119,29 @@ def evaluate_model(model, X_test, Y_test, category_names):
     return result
 
 def save_model(model, model_filepath):
+    
+    '''
+    
+    This function save the gridSearch object. The object will be used to classify new messages passed by the user from the
+    application's graphical interface.
+    
+    Params:
+        model (gridSearch object): Contain the best fitted gridSearch object over train data
+        model_filepath: Path where the object will be stored.
+    Return:
+        None: This is a procedure. it store a pickle object that contain the model in the model_filepath location.
+    
+    '''
     pickle.dump(model, open(model_filepath, 'wb'))
 
 def main():
+    
+    '''
+    
+    This function control the training flow and call the other functions for load, train, and save model
+    
+    '''
+    
     if len(sys.argv) == 3:
         database_filepath, model_filepath = sys.argv[1:]
         print('Loading data...\n    DATABASE: {}'.format(database_filepath))
