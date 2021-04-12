@@ -22,10 +22,10 @@ Enjoy it
 The structure for this project is:
 
 - app
-| - template
-| |- master.html  # main page of web app
-| |- go.html  # classification result page of web app
-|- run.py  # Flask file that runs app
+ - template
+  - master.html  # main page of web app
+  - go.html  # classification result page of web app
+ - run.py  # Flask file that runs app
 
 - data
 |- disaster_categories.csv  # data to process 
@@ -40,7 +40,7 @@ The structure for this project is:
 |- dummy_estimator.py
 |- plotly_wc.py
 |- starting_verb_extractor.py
-|- tokenize_.py
+|- tokenize_.py"
 
 Notes:
 
