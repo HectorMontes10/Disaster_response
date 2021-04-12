@@ -27,19 +27,18 @@ The structure for this project is:
       - go.html  # classification result page of web app
    - run.py  # Flask file that runs app
 - data
-|- disaster_categories.csv  # data to process 
-|- disaster_messages.csv  # data to process
-|- process_data.py #python script usefull for preprocessing data (clean messages)
-|- DisasterResponse.db   # Database where clean messages are stored
-
+   - disaster_categories.csv  # data to process 
+   - disaster_messages.csv  # data to process
+   - process_data.py #python script usefull for preprocessing data (clean messages)
+   - DisasterResponse.db   # Database where clean messages are stored
 - models
-|- train_classifier.py 
-|- classifier.pkl  # saved model
-|- calculate_textlength.py
-|- dummy_estimator.py
-|- plotly_wc.py
-|- starting_verb_extractor.py
-|- tokenize_.py"
+   - train_classifier.py 
+   - classifier.pkl  # saved model
+   - calculate_textlength.py
+   - dummy_estimator.py
+   - plotly_wc.py
+   - starting_verb_extractor.py
+   - tokenize_.py"
 
 Notes:
 
