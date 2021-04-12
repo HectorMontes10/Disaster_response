@@ -48,3 +48,14 @@ Notes:
 4. dummy_estimator.py implements a dummy class to allow injection of different estimators to the gridsearch method. Currently the training function implements random forest and logistic regression estimators with their respective search parameters. You can inspect the space parameter in more detail in the build_model function inside train_classifier.py
 5. tokenize_.py is a custom function that properly tokenizes the words in each message. It uses the word_tokenize and WordNetLemmatizer functions from the nltk package and returns clean tokens for training.
 6. For this function the credits are from PrashantSaikia, who implements a method to draw a word cloud using the plotly package. You can access the original resource in this [github repository](https://github.com/PrashantSaikia/Wordcloud-in-Plotly/blob/master/plotly_wordcloud.py)
+
+### Requeriments:
+
+- sklearn==0.24.1
+- pandas==1.1.5
+- ntlk==3.6.1
+- sqlalchemy==1.4.7
+- plotly==4.14.3
+- flask==1.1.2
+- wordcloud==1.8.1
+
