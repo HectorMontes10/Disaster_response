@@ -22,11 +22,10 @@ Enjoy it
 The structure for this project is:
 
 - app
- - template
-  - master.html  # main page of web app
-  - go.html  # classification result page of web app
- - run.py  # Flask file that runs app
-
+   - template
+    - master.html  # main page of web app
+    - go.html  # classification result page of web app
+   - run.py  # Flask file that runs app
 - data
 |- disaster_categories.csv  # data to process 
 |- disaster_messages.csv  # data to process
