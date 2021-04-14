@@ -1,6 +1,35 @@
 # Disaster Response Pipeline Project
 
+### Why this repository?
+
+For the effective response to disasters (earthquakes, floods, fires, etc.) it is important to coordinate the work between government entities and civil society.
+
+This project uses a database of twitter messages that people, communities or institutions sent during disaster events. The messages were classified into 36 different categories. Below some categories in the list:
+
+- request
+- offer
+- aid related
+- medical help
+
+...
+
+- child alone
+- refugees
+- death
+- storm
+- fire
+- earthquake
+
+Using nlp techniques on the database of tagged messages, we train a model that allows classifying new messages, hoping that it will be useful to better coordinate efforts. Each message can be assigned to several categories since they are not exclusive, so this is a typical multi-label classification problem. To train the model we use gridsearch on a parameter space defined for two estimators: random forests and logistic regression. 
+
+If a message is written in the input box of the web application, the best model chosen is used to classify it in the categories to which it belongs, and then this ouput can be used to route the message to the institution that should attend the event (this last one is not implemented but it is a potential use).
+
+To understand the characteristics of the training dataset, three visualizations are offered: the 5 categories with the most messages, the 5 categories with the fewest messages, and a cloud of frequent words in the messages.
+
+I hope this project will serve as a starting point for a more specialized disaster response solution. You can also use it as an outline to solve a similar problem where you need to train a multiclass classification model for word processing.
+
 ### Instructions:
+
 1. Run the following commands in the project's root directory to set up your database and model.
 
     - To run ETL pipeline that cleans data and stores in database
