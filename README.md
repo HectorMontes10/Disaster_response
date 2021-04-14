@@ -24,6 +24,8 @@ Using nlp techniques on the database of tagged messages, we train a model that a
 
 If a message is written in the input box of the web application, the best model chosen is used to classify it in the categories to which it belongs, and then this ouput can be used to route the message to the institution that should attend the event (this last one is not implemented but it is a potential use).
 
+<img src="Gif_clasificaci%C3%B3n.gif" alt="Gif_clasificación.gif">
+
 To understand the characteristics of the training dataset, three visualizations are offered: the 5 categories with the most messages, the 5 categories with the fewest messages, and a cloud of frequent words in the messages.
 
 I hope this project will serve as a starting point for a more specialized disaster response solution. You can also use it as an outline to solve a similar problem where you need to train a multiclass classification model for word processing.
